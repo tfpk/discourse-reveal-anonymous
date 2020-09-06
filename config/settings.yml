@@ -1,0 +1,6 @@
+plugins:
+  anonymous_moderators_enabled:
+    default: false
+    client: true
+  anonymous_moderators_username_prefix:
+    default: "moderator"
