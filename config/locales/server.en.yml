@@ -1,4 +1,3 @@
 en:
   site_settings:
-    anonymous_moderators_enabled: Allow moderators to access a second 'anonymous' account?
-    anonymous_moderators_username_prefix: Beginning of the username for anonymous moderator accounts.
+    reveal_anonymous_enabled: Allow moderators to reveal anonymous users' real identities?

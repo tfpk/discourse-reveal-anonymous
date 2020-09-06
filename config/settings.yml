@@ -1,6 +1,4 @@
 plugins:
-  anonymous_moderators_enabled:
+  reveal_anonymous_enabled:
     default: false
     client: true
-  anonymous_moderators_username_prefix:
-    default: "moderator"

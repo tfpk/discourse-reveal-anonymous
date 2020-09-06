@@ -1,3 +1,3 @@
-# discourse-anonymous-moderators
+# discourse-reveal-anonymous
 
-Allows moderators to have a second account for performing actions anonymously. Other staff members can see the real identity of the account.
+Allows anonymous users to have their true identity revealed.

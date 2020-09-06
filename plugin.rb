@@ -1,25 +1,20 @@
 # frozen_string_literal: true
 
-# name: discourse-anonymous-moderators
-# about: Allow moderators to have an alternative account for performing actions
+# name: discourse-reveal-anonymous
+# about: Allows moderators to identify who anonymous posters are.
 # version: 1.0
-# authors: David Taylor
+# authors: Tom Kunc
 # url: https://github.com/discourse/discourse-anonymous-moderators
 
-enabled_site_setting :anonymous_moderators_enabled
+enabled_site_setting :reveal_anonymous_enabled
 
-require_relative "lib/anonymous_moderators/engine"
-require_relative "lib/anonymous_moderators/manager"
-
-register_asset 'stylesheets/anonymous_moderators.scss'
-
+register_asset 'stylesheets/anonymous-users.scss'
 after_initialize do
-
-  add_to_class(:user, :is_anonymous_moderator) do
-    return DiscourseAnonymousModerators::Link.exists?(user: self)
-  end
-
-  add_to_class(:user, :can_become_anonymous_moderator) do
+ load File.expand_path('../app/controllers/discourse_reveal_anonymous/anonymous_user_controller.rb', __FILE__)
+ Discourse::Application.routes.append do
+   get '/admin/users/:username/deanonymize.json' => 'anonymous_user#deanonymize', constraints: {username: USERNAME_ROUTE_FORMAT}
+ end
+  add_to_class(:user, :_become_anonymous_moderator) do
     return DiscourseAnonymousModerators::Manager.acceptable_parent?(self)
   end
 
@@ -27,33 +22,4 @@ after_initialize do
     object.is_anonymous_moderator
   end
 
-  add_to_serializer(:current_user, :can_become_anonymous_moderator) do
-    object.can_become_anonymous_moderator
-  end
-
-  add_model_callback("DiscourseAnonymousModerators::Link", :after_commit, on: [ :create, :update ]) do
-    UserCustomField.find_or_initialize_by(user: user, name: :parent_user_username).update_attributes!(value: parent_user.username)
-  end
-
-  # TODO Drop after Discourse 2.6.0 release
-  if respond_to?(:allow_staff_user_custom_field)
-    allow_staff_user_custom_field(:parent_user_username)
-  else
-    whitelist_staff_user_custom_field(:parent_user_username)
-  end
-
-  module ModifyUserEmail
-    def execute(args)
-      return super(args) unless SiteSetting.anonymous_moderators_enabled
-
-      if parent = DiscourseAnonymousModerators::Link.find_by(user_id: args[:user_id])&.parent_user
-        args[:to_address] = parent.email
-      end
-      super(args)
-    end
-  end
-
-  ::Jobs::UserEmail.class_eval do
-    prepend ModifyUserEmail
-  end
 end
