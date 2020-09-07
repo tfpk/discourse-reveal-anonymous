@@ -8,18 +8,25 @@
 
 enabled_site_setting :reveal_anonymous_enabled
 
+def add_to_serializer_staffonly(serializer, attr, define_include_method = true, &block)
+  reloadable_patch do |plugin|
+    base = "#{serializer.to_s.classify}Serializer".constantize rescue "#{serializer.to_s}Serializer".constantize
+
+    # we have to work through descendants cause serializers may already be baked and cached
+    ([base] + base.descendants).each do |klass|
+      unless attr.to_s.start_with?("include_")
+        klass.staff_attributes(attr)
+
+      end
+
+      klass.public_send(:define_method, attr, &block)
+    end
+  end
+end
+
 register_asset 'stylesheets/anonymous-users.scss'
 after_initialize do
- load File.expand_path('../app/controllers/discourse_reveal_anonymous/anonymous_user_controller.rb', __FILE__)
- Discourse::Application.routes.append do
-   get '/admin/users/:username/deanonymize.json' => 'anonymous_user#deanonymize', constraints: {username: USERNAME_ROUTE_FORMAT}
- end
-  add_to_class(:user, :_become_anonymous_moderator) do
-    return DiscourseAnonymousModerators::Manager.acceptable_parent?(self)
+  add_to_serializer_staffonly :user_card, :master_user do
+    UserCardSerializer.new(object.master_user, scope: scope, root: false) if SiteSetting.reveal_anonymous_enabled
   end
-
-  add_to_serializer(:current_user, :is_anonymous_moderator) do
-    object.is_anonymous_moderator
-  end
-
 end
